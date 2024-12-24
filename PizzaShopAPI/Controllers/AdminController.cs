@@ -11,9 +11,9 @@ public class AdminController : ControllerBase
     {
         if (request.Username == "admin" && request.Password == "admin123")
         {
-            return Ok("Login successful");
+            return Ok();
         }
-        return Unauthorized("Invalid credentials");
+        return Ok();
     }
 }
 

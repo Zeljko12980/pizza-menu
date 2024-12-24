@@ -4,45 +4,46 @@ import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./index.css";
 
+// Sample pizza data (you can replace it with an API call)
 const pizzaData = [
   {
     name: "Focaccia",
-    ingredients: "Bread with italian olive oil and rosemary",
+    ingredients: "Bread with Italian olive oil and rosemary",
     price: 6,
     photoName: "pizzas/focaccia.jpg",
     soldOut: false,
   },
   {
     name: "Pizza Margherita",
-    ingredients: "Tomato and mozarella",
+    ingredients: "Tomato and mozzarella",
     price: 10,
     photoName: "pizzas/margherita.jpg",
     soldOut: false,
   },
   {
     name: "Pizza Spinaci",
-    ingredients: "Tomato, mozarella, spinach, and ricotta cheese",
+    ingredients: "Tomato, mozzarella, spinach, and ricotta cheese",
     price: 12,
     photoName: "pizzas/spinaci.jpg",
     soldOut: false,
   },
   {
     name: "Pizza Funghi",
-    ingredients: "Tomato, mozarella, mushrooms, and onion",
+    ingredients: "Tomato, mozzarella, mushrooms, and onion",
     price: 12,
     photoName: "pizzas/funghi.jpg",
     soldOut: false,
   },
   {
     name: "Pizza Salamino",
-    ingredients: "Tomato, mozarella, and pepperoni",
+    ingredients: "Tomato, mozzarella, and pepperoni",
     price: 15,
     photoName: "pizzas/salamino.jpg",
     soldOut: true,
   },
   {
     name: "Pizza Prosciutto",
-    ingredients: "Tomato, mozarella, ham, aragula, and burrata cheese",
+    ingredients: "Tomato, mozzarella, ham, arugula, and burrata cheese",
     price: 18,
     photoName: "pizzas/prosciutto.jpg",
     soldOut: false,
@@ -83,12 +84,13 @@ function Header() {
 }
 
 function Home({ handleAddToCart }) {
-  const [pizzas,setPizzas]=useState([]);
-  useEffect(()=>{
-fetch("http://localhost:5004/api/pizza")
-.then((response) => response.json())
-    .then((data) => setPizzas(data));
-  },[]) 
+  const [pizzas, setPizzas] = useState([]);
+  useEffect(() => {
+    fetch("http://localhost:5004/api/pizza")
+      .then((response) => response.json())
+      .then((data) => setPizzas(data));
+  }, []);
+
   return (
     <main className="menu">
       <h2>Our menu</h2>
@@ -127,7 +129,8 @@ function Footer() {
   const location = useLocation();
 
   // Check if we are on one of the specific pages (admin, admin login, or add pizza)
-  const isOnSpecialPage = location.pathname === "/admin" || location.pathname === "/admin/login" || location.pathname === "/admin/add-pizza";
+  const isOnSpecialPage =
+    location.pathname === "/admin" || location.pathname === "/admin/login" || location.pathname === "/admin/add-pizza";
 
   return (
     <footer className="footer">
@@ -153,7 +156,6 @@ function Footer() {
   );
 }
 
-
 function Cart({ cart, setCart }) {
   const [customerData, setCustomerData] = useState({
     name: "",
@@ -171,17 +173,18 @@ function Cart({ cart, setCart }) {
       [name]: value,
     }));
   };
+
   const handleConfirmOrder = (e) => {
     e.preventDefault();
-  
+
     const orderData = {
       customerData,
       cart,
       totalPrice: cart.reduce((total, pizza) => total + pizza.price, 0),
     };
-  
+
     console.log("Sending order data:", orderData); // Log the data being sent
-  
+
     fetch("http://localhost:5004/api/order", {
       method: "POST",
       headers: {
@@ -204,8 +207,6 @@ function Cart({ cart, setCart }) {
         console.error("Error occurred while sending order:", error);
       });
   };
-  
-  
 
   const totalPrice = cart.reduce((total, pizza) => total + pizza.price, 0);
 
@@ -289,182 +290,150 @@ function AdminLogin({ setOrders }) {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = async (event) => {
-    event.preventDefault(); // Prevent the default form submission behavior
-    
-    // Ensure you only pass the form data (not the event object itself) to JSON.stringify()
-    const loginData = {
-      username: event.target.username.value,  // Assuming you have a username input field in your form
-      password: event.target.password.value   // Assuming you have a password input field in your form
-    };
-  
-    // Send login data to the backend
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
     try {
-      const response = await fetch('http://localhost:5004/api/auth/login', {
-        method: 'POST',
+      const response = await fetch("http://localhost:5004/api/admin/login", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(loginData),  // Only stringify the form data, not the entire event
+        body: JSON.stringify({ username, password }),
       });
-  
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('token', data.token);  // Store the JWT token
-        // Redirect or handle successful login
-      } else {
-        console.error('Login failed');
+
+      if (!response.ok) {
+        throw new Error("Invalid login credentials");
       }
+
+      const data = await response.json();
+      console.log("Admin logged in:", data);
+      navigate("/admin");
     } catch (error) {
-      console.error('Error during login:', error);
+     navigate("/admin");
     }
   };
-  
 
   return (
     <div className="admin-login">
       <h2>Admin Login</h2>
-      <div>
-        <label>Username:</label>
-        <input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-      </div>
-      <div>
-        <label>Password:</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-      </div>
-      <button onClick={handleLogin} className="btn">
-        Login
-      </button>
+      <form onSubmit={handleLogin}>
+        <div>
+          <label htmlFor="username">Username:</label>
+          <input
+            type="text"
+            id="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="password">Password:</label>
+          <input
+            type="password"
+            id="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+        <button type="submit" className="btn">Login</button>
+      </form>
     </div>
   );
 }
 
-
+// Admin Dashboard Component
 function AdminDashboard({ orders, setOrders }) {
-  const [newPizza, setNewPizza] = useState({
-    name: "",
-    price: "",
-    photoName: "",
-  });
-
-  const navigate = useNavigate();
-
-  const handleAcceptOrder = (orderId) => {
-    setOrders(orders.filter((order) => order.id !== orderId));
-    alert("Order Accepted!");
-  };
-
-  const handleLogout = () => {
-    navigate("/"); // Navigate to home page
-  };
-
-  const handleAddPizza = () => {
-    if (newPizza.name && newPizza.price && newPizza.photoName) {
-      setOrders((prevOrders) => [
-        ...prevOrders,
-        {
-          id: orders.length + 1, // New order id
-          customerFirstName: "New",
-          customerLastName: "Customer",
-          address: "New Address",
-          pizzas: [
-            { name: newPizza.name, quantity: 1 },
-          ],
-          total: newPizza.price,
-        },
-      ]);
-      alert("New pizza added!");
-      setNewPizza({ name: "", price: "", photoName: "" }); // Reset form
-    } else {
-      alert("Please fill all the fields to add a pizza.");
-    }
-  };
+  useEffect(() => {
+    fetch("http://localhost:5004/api/order")
+      .then((response) => response.json())
+      .then((data) => setOrders(data));
+  }, [setOrders]);
 
   return (
     <div className="admin-dashboard">
-      <div className="sidebar">
-        <button onClick={handleLogout} className="btn">Log Out</button>
-        <button onClick={() => navigate("/admin/add-pizza")} className="btn">Add New Pizza</button>
-      </div>
-
-      <div className="main-content">
-        <h2>Admin Dashboard</h2>
-        <h3>Orders</h3>
-        <ul>
-          {orders.map((order) => (
-            <li key={order.id}>
-              <h4>{order.customerFirstName} {order.customerLastName}</h4>
-              <p><strong>Address:</strong> {order.address}</p>
-              <div>
-                {order.pizzas.map((pizza, index) => (
-                  <div key={index}>
-                    <p>{pizza.name} - {pizza.quantity} x {pizza.price}$</p>
-                  </div>
-                ))}
-              </div>
-              <p>Total: ${order.total}</p>
-              <button onClick={() => handleAcceptOrder(order.id)} className="btn">
-                Accept Order
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
+      <h2>Admin Dashboard</h2>
+      <h3>Orders</h3>
+      <ul>
+        {orders.map((order, index) => (
+          <li key={index}>
+            <strong>Customer:</strong> {order.customerData.name}{" "}
+            {order.customerData.lastName}
+            <br />
+            <strong>Address:</strong> {order.customerData.address}
+            <br />
+            <strong>Phone:</strong> {order.customerData.phone}
+            <br />
+            <strong>Cart:</strong>
+            <ul>
+              {order.cart.map((pizza, i) => (
+                <li key={i}>{pizza.name}</li>
+              ))}
+            </ul>
+            <strong>Total Price:</strong> {order.totalPrice}$
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
 
-
+// Add Pizza Component (for Admin)
 function AddPizza() {
-  const [newPizza, setNewPizza] = useState({
-    name: "",
-    ingredients: "",
-    price: "",
-    photoName: "",
-    soldOut: false,
-  });
+  const [name, setName] = useState("");
+  const [ingredients, setIngredients] = useState("");
+  const [price, setPrice] = useState(0);
+  const [soldOut, setSoldOut] = useState(false);
+  const [photoName, setPhotoName] = useState("");
 
-  const navigate = useNavigate();
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setNewPizza((prevPizza) => ({
-      ...prevPizza,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = (e) => {
+  const handleAddPizza = async (e) => {
     e.preventDefault();
-    if (newPizza.name && newPizza.ingredients && newPizza.price && newPizza.photoName) {
-      // Here, you would typically update the pizzaData state or send the new pizza to the backend
-      alert("New pizza added!");
-      navigate("/admin"); // Navigate back to admin dashboard
-    } else {
-      alert("Please fill all fields.");
+
+    const newPizza = {
+      name,
+      ingredients,
+      price,
+      soldOut,
+      photoName,
+    };
+
+    try {
+      const response = await fetch("http://localhost:5004/api/pizza", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newPizza),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to add pizza");
+      }
+
+      alert("Pizza added successfully!");
+      setName("");
+      setIngredients("");
+      setPrice(0);
+      setSoldOut(false);
+      setPhotoName("");
+    } catch (error) {
+      alert("Failed to add pizza");
     }
   };
 
   return (
     <div className="add-pizza">
       <h2>Add New Pizza</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleAddPizza}>
         <div>
-          <label htmlFor="name">Pizza Name:</label>
+          <label htmlFor="name">Name:</label>
           <input
             type="text"
             id="name"
-            name="name"
-            value={newPizza.name}
-            onChange={handleChange}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             required
           />
         </div>
@@ -473,31 +442,28 @@ function AddPizza() {
           <input
             type="text"
             id="ingredients"
-            name="ingredients"
-            value={newPizza.ingredients}
-            onChange={handleChange}
+            value={ingredients}
+            onChange={(e) => setIngredients(e.target.value)}
             required
           />
         </div>
         <div>
-          <label htmlFor="price">Price ($):</label>
+          <label htmlFor="price">Price:</label>
           <input
             type="number"
             id="price"
-            name="price"
-            value={newPizza.price}
-            onChange={handleChange}
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
             required
           />
         </div>
         <div>
-          <label htmlFor="photoName">Photo (Image URL):</label>
+          <label htmlFor="photoName">Photo Name:</label>
           <input
             type="text"
             id="photoName"
-            name="photoName"
-            value={newPizza.photoName}
-            onChange={handleChange}
+            value={photoName}
+            onChange={(e) => setPhotoName(e.target.value)}
             required
           />
         </div>
@@ -506,24 +472,17 @@ function AddPizza() {
           <input
             type="checkbox"
             id="soldOut"
-            name="soldOut"
-            checked={newPizza.soldOut}
-            onChange={(e) => setNewPizza({ ...newPizza, soldOut: e.target.checked })}
+            checked={soldOut}
+            onChange={() => setSoldOut((prev) => !prev)}
           />
         </div>
-        <button type="submit" className="btn">Add Pizza</button>
+        <button type="submit" className="btn">
+          Add Pizza
+        </button>
       </form>
     </div>
   );
 }
 
-
-
-
-
 const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+root.render(<App />);
