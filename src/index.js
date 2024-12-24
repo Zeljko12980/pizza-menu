@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -83,7 +83,12 @@ function Header() {
 }
 
 function Home({ handleAddToCart }) {
-  const pizzas = pizzaData;
+  const [pizzas,setPizzas]=useState([]);
+  useEffect(()=>{
+fetch("http://localhost:5004/api/pizza")
+.then((response) => response.json())
+    .then((data) => setPizzas(data));
+  },[]) 
   return (
     <main className="menu">
       <h2>Our menu</h2>
@@ -166,19 +171,41 @@ function Cart({ cart, setCart }) {
       [name]: value,
     }));
   };
-
   const handleConfirmOrder = (e) => {
     e.preventDefault();
-
-    console.log("Order has been sent:", {
+  
+    const orderData = {
       customerData,
       cart,
       totalPrice: cart.reduce((total, pizza) => total + pizza.price, 0),
-    });
-
-    setCart([]);
-    navigate("/"); // Redirect to the home page
+    };
+  
+    console.log("Sending order data:", orderData); // Log the data being sent
+  
+    fetch("http://localhost:5004/api/order", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(orderData),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log("Order has been sent:", data);
+        setCart([]);
+        navigate("/"); // Redirect to home page
+      })
+      .catch((error) => {
+        console.error("Error occurred while sending order:", error);
+      });
   };
+  
+  
 
   const totalPrice = cart.reduce((total, pizza) => total + pizza.price, 0);
 
@@ -262,34 +289,37 @@ function AdminLogin({ setOrders }) {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    if (username === "admin" && password === "admin123") {
-      setOrders([
-        {
-          id: 1,
-          customerFirstName: "John",
-          customerLastName: "Doe",
-          address: "123 Elm Street, Springfield",
-          pizzas: [
-            { name: "Pizza Margherita", quantity: 2 },
-            { name: "Pizza Spinaci", quantity: 1 },
-          ],
-          total: 22,
+  const handleLogin = async (event) => {
+    event.preventDefault(); // Prevent the default form submission behavior
+    
+    // Ensure you only pass the form data (not the event object itself) to JSON.stringify()
+    const loginData = {
+      username: event.target.username.value,  // Assuming you have a username input field in your form
+      password: event.target.password.value   // Assuming you have a password input field in your form
+    };
+  
+    // Send login data to the backend
+    try {
+      const response = await fetch('http://localhost:5004/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        {
-          id: 2,
-          customerFirstName: "Jane",
-          customerLastName: "Smith",
-          address: "456 Oak Avenue, Springfield",
-          pizzas: [{ name: "Pizza Prosciutto", quantity: 1 }],
-          total: 18,
-        },
-      ]);
-      navigate("/admin");
-    } else {
-      alert("Invalid credentials");
+        body: JSON.stringify(loginData),  // Only stringify the form data, not the entire event
+      });
+  
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('token', data.token);  // Store the JWT token
+        // Redirect or handle successful login
+      } else {
+        console.error('Login failed');
+      }
+    } catch (error) {
+      console.error('Error during login:', error);
     }
   };
+  
 
   return (
     <div className="admin-login">
